@@ -4,7 +4,7 @@ use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::{Display, Surface};
 use imgui::*;
-use imgui::{Context, FontConfig, FontGlyphRanges, FontSource, Ui};
+use imgui::{Context, FontSource};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
@@ -48,7 +48,8 @@ fn main() {
 
     imgui.io_mut().font_global_scale = (1.0 / hidpi_factor) as f32;
 
-    let mut imgui_style = imgui.style_mut();
+    let imgui_style = imgui.style_mut();
+    imgui_style.use_light_colors();
 
     let mut renderer =
         Renderer::init(&mut imgui, &display).expect("Failed to initialize imgui-glium Renderer.");
@@ -69,7 +70,7 @@ fn main() {
             gl_window.window().request_redraw();
         }
         Event::RedrawRequested(_) => {
-            let mut ui = imgui.frame();
+            let ui = imgui.frame();
 
             let mut run = true;
 
@@ -84,6 +85,24 @@ fn main() {
                     ui.text(im_str!("Hello world!"));
                     ui.checkbox(im_str!("One"), &mut false);
                     ui.checkbox(im_str!("Two"), &mut true);
+
+                    TreeNode::new(im_str!("TreeNode #1")).build(&ui, || {
+                        ui.bullet_text(im_str!("Test Text"));
+                        ui.checkbox(im_str!("Hello"), &mut true);
+                    });
+
+                    ChildWindow::new("whatever")
+                        .size([300.0, 200.0])
+                        .scrollable(true)
+                        .border(true)
+                        .build(&ui, || {
+                            for i in 1..=4 {
+                                ui.text_colored(
+                                    [i as f32 * 0.2, 0.0, 0.0, 1.0],
+                                    format!("Hello text #{}", i),
+                                );
+                            }
+                        });
                 });
 
             if !run {
