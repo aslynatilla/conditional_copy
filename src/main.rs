@@ -12,12 +12,16 @@ use std::time::Instant;
 
 //https://github.com/imgui-rs/imgui-rs
 
+const WIDTH: i32 = 600;
+const HEIGHT: i32 = 800;
+
 fn main() {
     let event_loop = EventLoop::new();
     let context_builder = glutin::ContextBuilder::new().with_vsync(true);
     let window_builder = WindowBuilder::new()
         .with_title("Conditional Copy Script")
-        .with_inner_size(glutin::dpi::LogicalSize::new(600, 800));
+        .with_inner_size(glutin::dpi::LogicalSize::new(WIDTH, HEIGHT))
+        .with_resizable(false);
     let display = Display::new(window_builder, context_builder, &event_loop)
         .expect("Failed to initialize glium Display");
 
@@ -34,15 +38,17 @@ fn main() {
     }
 
     let hidpi_factor = platform.hidpi_factor();
-    let font_size = (13.0 * hidpi_factor) as f32;
-    imgui.fonts().add_font(&[FontSource::DefaultFontData {
-        config: Some(FontConfig {
-            size_pixels: font_size,
-            ..FontConfig::default()
-        }),
+    let font_size = (26.0 * hidpi_factor) as f32;
+
+    imgui.fonts().add_font(&[FontSource::TtfData {
+        data: include_bytes!("../resources/Roboto-Light.ttf"),
+        size_pixels: font_size,
+        config: None,
     }]);
 
     imgui.io_mut().font_global_scale = (1.0 / hidpi_factor) as f32;
+
+    let mut imgui_style = imgui.style_mut();
 
     let mut renderer =
         Renderer::init(&mut imgui, &display).expect("Failed to initialize imgui-glium Renderer.");
@@ -67,7 +73,18 @@ fn main() {
 
             let mut run = true;
 
-            ui.text(im_str!("Hello world!"));
+            Window::new(im_str!("Creating a long window"))
+                .opened(&mut run)
+                .size([WIDTH as f32, HEIGHT as f32], Condition::Always)
+                .position([0.0, 0.0], Condition::Appearing)
+                .movable(false)
+                .resizable(false)
+                .no_decoration()
+                .build(&ui, || {
+                    ui.text(im_str!("Hello world!"));
+                    ui.checkbox(im_str!("One"), &mut false);
+                    ui.checkbox(im_str!("Two"), &mut true);
+                });
 
             if !run {
                 *control_flow = ControlFlow::Exit;
