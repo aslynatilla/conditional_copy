@@ -8,6 +8,8 @@ use imgui::{Context, FontSource};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
+use std::env;
+use std::fs;
 use std::time::Instant;
 
 //https://github.com/imgui-rs/imgui-rs
@@ -16,6 +18,27 @@ const WIDTH: i32 = 600;
 const HEIGHT: i32 = 800;
 
 fn main() {
+    let path = match env::args().nth(1) {
+        Some(s) => s,
+        None => String::from("cc_instructions.cci"),
+    };
+
+    let instructions =
+        match fs::read_to_string(&path) {
+            Ok(file_content) => file_content,
+            Err(e) => match e.kind() {
+                std::io::ErrorKind::NotFound => panic!("The path to the specified instruction file was not correct. The file was not found."),
+                _ => panic!("Unexpected error in reading the file.")
+            }
+        };
+
+    let filename: String = std::path::Path::new(&path)
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+
     let event_loop = EventLoop::new();
     let context_builder = glutin::ContextBuilder::new().with_vsync(true);
     let window_builder = WindowBuilder::new()
@@ -83,25 +106,16 @@ fn main() {
                 .resizable(false)
                 .no_decoration()
                 .build(&ui, || {
-                    ui.text(im_str!("Hello world!"));
-                    ui.checkbox(im_str!("One"), &mut false);
-                    ui.checkbox(im_str!("Two"), &mut true);
-
-                    TreeNode::new(im_str!("TreeNode #1")).build(&ui, || {
-                        ui.bullet_text(im_str!("Test Text"));
-                        ui.checkbox(im_str!("Hello"), &mut true);
-                    });
-
+                    let title = ImString::new(format!("Content of file {}", filename));
+                    ui.text(title);
+                    let available_dims = ui.content_region_avail();
                     ChildWindow::new("whatever")
-                        .size([300.0, 200.0])
+                        .size(available_dims)
                         .scrollable(true)
                         .border(true)
                         .build(&ui, || {
-                            for i in 1..=4 {
-                                ui.text_colored(
-                                    [i as f32 * 0.2, 0.0, 0.0, 1.0],
-                                    format!("Hello text #{}", i),
-                                );
+                            for line in instructions.lines() {
+                                ui.text_colored([0.6, 0.0, 0.0, 1.0], format!("{}", line));
                             }
                         });
                 });
