@@ -72,7 +72,7 @@ fn main() {
         Event::RedrawRequested(_) => {
             let ui = imgui.frame();
 
-            let mut run = true;
+            let mut run = !ui.is_any_item_focused() && !ui.is_key_down(Key::Escape);
 
             Window::new(im_str!("Creating a long window"))
                 .opened(&mut run)
