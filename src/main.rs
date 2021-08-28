@@ -1,5 +1,5 @@
 use glium::glutin;
-use glium::glutin::event::{Event, WindowEvent};
+use glium::glutin::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::{Display, Surface};
@@ -72,7 +72,8 @@ fn main() {
         Event::RedrawRequested(_) => {
             let ui = imgui.frame();
 
-            let mut run = !ui.is_any_item_focused() && !ui.is_key_down(Key::Escape);
+            // let mut run = !ui.is_any_item_focused() && !ui.is_key_down(Key::Escape);
+            let mut run = true;
 
             Window::new(im_str!("Creating a long window"))
                 .opened(&mut run)
@@ -119,11 +120,23 @@ fn main() {
                 .expect("Rendering failed");
             target.finish().expect("Failed to swap buffers");
         }
-        Event::WindowEvent {
-            event: WindowEvent::CloseRequested,
-            ..
-        } => *control_flow = ControlFlow::Exit,
-        event => {
+        Event::WindowEvent { event, .. } => match event {
+            WindowEvent::CloseRequested
+            | WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                        ..
+                    },
+                ..
+            } => {
+                *control_flow = ControlFlow::Exit;
+            }
+            _ => {}
+        },
+
+        _ => {
             let gl_window = display.gl_window();
             platform.handle_event(imgui.io_mut(), gl_window.window(), &event);
         }
