@@ -17,20 +17,23 @@ use std::time::Instant;
 const WIDTH: i32 = 600;
 const HEIGHT: i32 = 800;
 
+fn retrieve_instructions(path: &String) -> String {
+    match fs::read_to_string(&path) {
+        Ok(file_content) => file_content,
+        Err(e) => match e.kind() {
+            std::io::ErrorKind::NotFound => panic!("The path to the specified instruction file was not correct. The file was not found."),
+            _ => panic!("Unexpected error in reading the file.")
+        }
+    }
+}
+
 fn main() {
     let path = match env::args().nth(1) {
         Some(s) => s,
         None => String::from("cc_instructions.cci"),
     };
 
-    let instructions =
-        match fs::read_to_string(&path) {
-            Ok(file_content) => file_content,
-            Err(e) => match e.kind() {
-                std::io::ErrorKind::NotFound => panic!("The path to the specified instruction file was not correct. The file was not found."),
-                _ => panic!("Unexpected error in reading the file.")
-            }
-        };
+    let instructions = retrieve_instructions(&path);
 
     let filename: String = std::path::Path::new(&path)
         .file_name()
@@ -98,7 +101,7 @@ fn main() {
             // let mut run = !ui.is_any_item_focused() && !ui.is_key_down(Key::Escape);
             let mut run = true;
 
-            Window::new(im_str!("Creating a long window"))
+            Window::new(im_str!("Conditional Copy Window"))
                 .opened(&mut run)
                 .size([WIDTH as f32, HEIGHT as f32], Condition::Always)
                 .position([0.0, 0.0], Condition::Appearing)
@@ -109,7 +112,7 @@ fn main() {
                     let title = ImString::new(format!("Content of file {}", filename));
                     ui.text(title);
                     let available_dims = ui.content_region_avail();
-                    ChildWindow::new("whatever")
+                    ChildWindow::new("FileContent")
                         .size(available_dims)
                         .scrollable(true)
                         .border(true)
