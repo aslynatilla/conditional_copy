@@ -12,7 +12,8 @@ use std::env;
 use std::fs;
 use std::time::Instant;
 
-//https://github.com/imgui-rs/imgui-rs
+mod cc_controller;
+use cc_controller::Controller;
 
 const WIDTH: i32 = 600;
 const HEIGHT: i32 = 800;
@@ -34,6 +35,8 @@ fn main() {
     };
 
     let instructions = retrieve_instructions(&path);
+    let controller = Controller::new(instructions);
+    let targets = controller.target_list();
 
     let filename: String = std::path::Path::new(&path)
         .file_name()
@@ -109,16 +112,16 @@ fn main() {
                 .resizable(false)
                 .no_decoration()
                 .build(&ui, || {
-                    let title = ImString::new(format!("Content of file {}", filename));
+                    let title = ImString::new(format!("Instructions in {}", filename));
                     ui.text(title);
                     let available_dims = ui.content_region_avail();
-                    ChildWindow::new("FileContent")
+                    ChildWindow::new("InstructionWindow")
                         .size(available_dims)
                         .scrollable(true)
                         .border(true)
                         .build(&ui, || {
-                            for line in instructions.lines() {
-                                ui.text_colored([0.6, 0.0, 0.0, 1.0], format!("{}", line));
+                            for files_to_read in targets.iter() {
+                                ui.text_colored([0.6, 0.0, 0.0, 1.0], format!("{}", files_to_read));
                             }
                         });
                 });

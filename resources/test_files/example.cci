@@ -1,0 +1,5 @@
+[targets]
+resources/test_files/text.txt
+
+[destination]
+resources/test_files/output_dir/
