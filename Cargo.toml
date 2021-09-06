@@ -7,8 +7,5 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-imgui = "0.7.0"
-imgui-glium-renderer = "0.7.0"
-glium = "0.29.0"
-imgui-winit-support = "0.7.1"
-winit = "0.25.0"
+crossterm = "0.21.0"
+clap = "2.33.3"
