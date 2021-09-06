@@ -1,8 +1,9 @@
 use clap::{App, Arg};
 use crossterm::event::{poll, read, Event, KeyCode};
-use crossterm::terminal;
+use crossterm::{cursor, style, terminal, QueueableCommand};
 
 use std::fs;
+use std::io::{stdout, Write};
 use std::time::Duration;
 
 mod cc_controller;
@@ -41,7 +42,6 @@ fn main() -> crossterm::Result<()> {
     let targets = controller.target_list();
 
     let interactivity = matches.is_present("interactive_flag");
-    println!("{}", interactivity);
 
     if !interactivity {
         for t in targets {
@@ -74,6 +74,19 @@ fn main() -> crossterm::Result<()> {
         return Ok(());
     } else {
         let (mut width, mut height) = terminal::size()?;
+        let mut shown_targets = targets.iter().take(height as usize).collect::<Vec<_>>();
+
+        let mut c_y = 0u16;
+        let mut output = stdout();
+        output
+            .queue(terminal::EnterAlternateScreen {})?
+            .queue(terminal::Clear {
+                0: terminal::ClearType::All,
+            })?;
+        for target in shown_targets.iter() {
+            output.queue(style::Print(format!("[ ] {:?}\n", target)))?;
+        }
+        output.queue(cursor::MoveTo(1, 0))?.flush()?;
 
         'event_loop: loop {
             if poll(Duration::from_millis(200))? {
@@ -83,18 +96,28 @@ fn main() -> crossterm::Result<()> {
                             println!("Exiting...!");
                             break 'event_loop;
                         }
+                        KeyCode::Up if c_y > 0 => {
+                            output.queue(cursor::MoveUp(1))?;
+                            c_y -= 1;
+                        }
+                        KeyCode::Down if c_y < shown_targets.len() as u16 - 1 => {
+                            output.queue(cursor::MoveDown(1))?;
+                            c_y += 1;
+                        }
                         _ => (),
                     },
                     Event::Resize(new_width, new_height) => {
-                        println!("Old size: {}, {}", width, height);
-                        println!("New size: {}, {}", new_width, new_height);
                         width = new_width;
                         height = new_height;
                     }
                     _ => (),
                 }
+
+                output.flush()?;
             }
         }
+
+        output.queue(terminal::LeaveAlternateScreen {})?;
         return Ok(());
     }
 }

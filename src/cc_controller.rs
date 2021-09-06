@@ -15,7 +15,6 @@ impl Controller {
             .unwrap()
             .into();
         //TODO: validate destination
-        println!("{:?}", destination);
 
         Controller {
             cci_content: cci_instructions,
