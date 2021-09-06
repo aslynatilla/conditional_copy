@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub(crate) struct Controller {
     cci_content: String,
@@ -9,12 +9,13 @@ impl Controller {
     pub(crate) fn new(cci_instructions: String) -> Self {
         let destination = cci_instructions
             .lines()
-            .skip_while(|&l| l.eq("[destination]"))
+            .skip_while(|&l| !l.eq("[destination]"))
             .skip(1)
             .next()
             .unwrap()
             .into();
         //TODO: validate destination
+        println!("{:?}", destination);
 
         Controller {
             cci_content: cci_instructions,
@@ -36,7 +37,7 @@ impl Controller {
         //TODO: filter more by validating instructions
     }
 
-    pub(crate) fn target_list(&self) -> Vec<String> {
-        self.targets().map(str::to_string).collect()
+    pub(crate) fn target_list(&self) -> Vec<PathBuf> {
+        self.targets().map(PathBuf::from).collect()
     }
 }

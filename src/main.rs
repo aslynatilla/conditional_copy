@@ -45,6 +45,41 @@ fn main() {
         .unwrap()
         .to_string();
 
+    let interactivity = env::args().skip(2).find(|s| s.eq("-i"));
+
+    if interactivity.is_none() {
+        for t in targets {
+            let maybe_file = fs::File::open(&t);
+            match maybe_file {
+                Ok(_) => {}
+                //  This should not be necessary, and it should have been already validated
+                _ => todo!("Handle non existing file in target somewhere!"),
+            }
+            println!("t {:?}", t);
+            let mut destination = controller.destination();
+            destination.push(t.file_name().unwrap());
+            println!("d {:?}", destination);
+
+            match fs::File::open(destination.as_path()) {
+                Err(e) => match e.kind() {
+                    std::io::ErrorKind::PermissionDenied => eprintln!("Permission denied"),
+                    std::io::ErrorKind::NotFound => {
+                        fs::File::create(&destination).unwrap();
+                        std::fs::copy(&t, destination).unwrap();
+                    }
+                    _ => {
+                        eprintln!("Unhandled error!")
+                    }
+                },
+                _ => {
+                    eprintln!("File {:?} already exists.", destination.as_path());
+                    todo!("Add logic to update the file conditionally.");
+                }
+            }
+        }
+        return;
+    }
+
     let event_loop = EventLoop::new();
     let context_builder = glutin::ContextBuilder::new().with_vsync(true);
     let window_builder = WindowBuilder::new()
@@ -121,7 +156,10 @@ fn main() {
                         .border(true)
                         .build(&ui, || {
                             for files_to_read in targets.iter() {
-                                ui.text_colored([0.6, 0.0, 0.0, 1.0], format!("{}", files_to_read));
+                                ui.text_colored(
+                                    [0.6, 0.0, 0.0, 1.0],
+                                    format!("{:?}", files_to_read),
+                                );
                             }
                         });
                 });
