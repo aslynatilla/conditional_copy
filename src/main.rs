@@ -1,6 +1,9 @@
 use clap::{App, Arg};
+use crossterm::event::{poll, read, Event, KeyCode};
+use crossterm::terminal;
 
 use std::fs;
+use std::time::Duration;
 
 mod cc_controller;
 use cc_controller::Controller;
@@ -15,22 +18,21 @@ fn retrieve_instructions(path: String) -> String {
     }
 }
 
-fn main() {
+fn main() -> crossterm::Result<()> {
     let matches = App::new("Conditional Copy Utility")
         .version("1.0")
         .about("Copy files to a destination folder or update them, if necessary.")
+        .arg(Arg::with_name("instructions").default_value("cc_instructions.cci"))
         .arg(
             Arg::with_name("interactive_flag")
                 .short("i")
                 .long("interactive")
                 .help("The program runs in interactive mode"),
         )
-        .arg(Arg::with_name("instructions").default_value("cc_instructions.cci"))
         .get_matches();
 
     let instructions = matches
         .value_of("instructions")
-        // .expect("No default value for instructions?!")
         .map(String::from)
         .map(retrieve_instructions)
         .expect("Instructions could not be read properly.");
@@ -38,9 +40,10 @@ fn main() {
     let controller = Controller::new(instructions);
     let targets = controller.target_list();
 
-    let interactivity = matches.value_of("interactive_flag");
+    let interactivity = matches.is_present("interactive_flag");
+    println!("{}", interactivity);
 
-    if interactivity.is_none() {
+    if !interactivity {
         for t in targets {
             let maybe_file = fs::File::open(&t);
             match maybe_file {
@@ -68,8 +71,30 @@ fn main() {
                 }
             }
         }
-        return;
+        return Ok(());
     } else {
-        todo!("Use crossterm for stuff");
+        let (mut width, mut height) = terminal::size()?;
+
+        'event_loop: loop {
+            if poll(Duration::from_millis(200))? {
+                match read()? {
+                    Event::Key(key_event) => match key_event.code {
+                        KeyCode::Char('q') | KeyCode::Esc => {
+                            println!("Exiting...!");
+                            break 'event_loop;
+                        }
+                        _ => (),
+                    },
+                    Event::Resize(new_width, new_height) => {
+                        println!("Old size: {}, {}", width, height);
+                        println!("New size: {}, {}", new_width, new_height);
+                        width = new_width;
+                        height = new_height;
+                    }
+                    _ => (),
+                }
+            }
+        }
+        return Ok(());
     }
 }
