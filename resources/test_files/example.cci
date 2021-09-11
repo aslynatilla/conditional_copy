@@ -2,14 +2,6 @@
 resources/test_files/text.txt
 resources/test_files/text_1.txt
 resources/test_files/text_2.txt
-resources/test_files/text_3.txt
-resources/test_files/text_4.txt
-resources/test_files/text_5.txt
-resources/test_files/text_6.txt
-resources/test_files/text_7.txt
-resources/test_files/text_8.txt
-resources/test_files/text_9.txt
-
 
 [destination]
 resources/test_files/output_dir/

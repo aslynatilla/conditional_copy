@@ -42,8 +42,18 @@ fn main() -> crossterm::Result<()> {
     let targets = controller.target_list();
 
     let interactivity = matches.is_present("interactive_flag");
+    let destination_dir = controller.destination();
+
+    let destination_dir_exists = match fs::File::open(destination_dir.as_path()) {
+        Ok(_) => true,
+        Err(_) => false,
+    };
 
     if !interactivity {
+        if targets.len() > 0 && !destination_dir_exists {
+            fs::create_dir(&destination_dir).unwrap();
+        }
+
         for t in targets {
             let maybe_file = fs::File::open(&t);
             match maybe_file {
@@ -51,7 +61,8 @@ fn main() -> crossterm::Result<()> {
                 //  This should not be necessary, and it should have been already validated
                 _ => todo!("Handle non existing file in target somewhere!"),
             }
-            let mut destination = controller.destination();
+
+            let mut destination = destination_dir.clone();
             destination.push(t.file_name().unwrap());
 
             match fs::File::open(destination.as_path()) {
