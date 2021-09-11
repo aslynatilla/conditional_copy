@@ -42,50 +42,12 @@ fn main() -> crossterm::Result<()> {
     let targets = controller.target_list();
 
     let interactivity = matches.is_present("interactive_flag");
-    let destination_dir = controller.destination();
-
-    let destination_dir_exists = match fs::File::open(destination_dir.as_path()) {
-        Ok(_) => true,
-        Err(_) => false,
-    };
 
     if !interactivity {
-        if targets.len() > 0 && !destination_dir_exists {
-            fs::create_dir(&destination_dir).unwrap();
-        }
-
-        for t in targets {
-            let maybe_file = fs::File::open(&t);
-            match maybe_file {
-                Ok(_) => {}
-                //  This should not be necessary, and it should have been already validated
-                _ => todo!("Handle non existing file in target somewhere!"),
-            }
-
-            let mut destination = destination_dir.clone();
-            destination.push(t.file_name().unwrap());
-
-            match fs::File::open(destination.as_path()) {
-                Err(e) => match e.kind() {
-                    std::io::ErrorKind::PermissionDenied => eprintln!("Permission denied"),
-                    std::io::ErrorKind::NotFound => {
-                        fs::File::create(&destination).unwrap();
-                        std::fs::copy(&t, destination).unwrap();
-                    }
-                    _ => {
-                        eprintln!("Unhandled error!")
-                    }
-                },
-                _ => {
-                    eprintln!("File {:?} already exists.", destination.as_path());
-                    todo!("Add logic to update the file conditionally.");
-                }
-            }
-        }
-        return Ok(());
+        controller.copy_all_targets()
     } else {
-        let (mut width, mut height) = terminal::size()?;
-        let mut shown_targets = targets.iter().take(height as usize).collect::<Vec<_>>();
+        let (_, height) = terminal::size()?;
+        let shown_targets = targets.iter().take(height as usize).collect::<Vec<_>>();
 
         let mut c_y = 0u16;
         let mut output = stdout();
@@ -117,9 +79,9 @@ fn main() -> crossterm::Result<()> {
                         }
                         _ => (),
                     },
-                    Event::Resize(new_width, new_height) => {
-                        width = new_width;
-                        height = new_height;
+                    Event::Resize(_, /*new_height*/ _) => {
+                        //  height = new_height;
+                        //  TODO: add logic for update on resize
                     }
                     _ => (),
                 }
